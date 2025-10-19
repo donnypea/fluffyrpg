@@ -5,118 +5,275 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Legends of Eldoria — Deluxe</title>
 <style>
-  :root{
-    --panel-bg: rgba(6,6,6,0.6);
+  :root {
+    --panel-bg: rgba(6, 6, 6, 0.6);
     --accent: #f6c84c;
     --muted: #bfbfbf;
   }
-  body{
-    margin:0;
+
+  body {
+    margin: 0;
     font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     background: url('images/town-bg.jpg') no-repeat center center/cover;
     color: #fff;
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
   }
 
-  #game{
+  #game {
     width: 860px;
-    max-width: calc(100% - 48px);
+    max-width: calc(100% - 24px);
     background: var(--panel-bg);
     border-radius: 14px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
     padding: 18px;
-    border: 1px solid rgba(255,255,255,0.04);
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  h1{ margin:0; font-size:22px; color:var(--accent); text-shadow:0 2px 8px rgba(0,0,0,0.7) }
-  .sub { color:var(--muted); font-size:13px }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    color: var(--accent);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+
+  .sub {
+    color: var(--muted);
+    font-size: 13px;
+  }
 
   #main {
-    display:grid;
+    display: grid;
     grid-template-columns: 300px 1fr;
-    gap:18px;
-    margin-top:14px;
+    gap: 18px;
+    margin-top: 14px;
   }
 
-  /* left column: stats + inventory */
+  /* left column */
   #left {
-    background: rgba(0,0,0,0.4);
-    padding:12px;
-    border-radius:10px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    border-radius: 10px;
   }
 
-  .stat-row{ display:flex; justify-content:space-between; padding:6px 8px; align-items:center; }
-  .stat-row strong{ color:var(--accent) }
-  #inventory{ margin-top:10px; font-size:14px }
-  #items-list{ list-style:none; padding:0; margin:6px 0 0 0; max-height:160px; overflow:auto }
-  #items-list li{ padding:6px 8px; background: rgba(255,255,255,0.03); margin-bottom:6px; border-radius:6px; font-size:13px }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    align-items: center;
+    font-size: 14px;
+  }
 
-  /* right column: story / scene */
+  .stat-row strong {
+    color: var(--accent);
+  }
+
+  #inventory {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  #items-list {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0 0;
+    max-height: 160px;
+    overflow: auto;
+  }
+
+  #items-list li {
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    margin-bottom: 6px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  /* right column */
   #right {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));
-    padding:12px;
-    border-radius:10px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.2));
+    padding: 12px;
+    border-radius: 10px;
   }
 
-  #area { font-weight:700; font-size:16px; color:var(--accent); margin-bottom:8px }
-  #story { min-height:72px; font-size:15px; color:#eee; padding:8px; border-radius:8px; background: rgba(0,0,0,0.25); }
+  #area {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  #story {
+    min-height: 72px;
+    font-size: 15px;
+    color: #eee;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+  }
 
   #scene {
-    display:flex;
-    align-items:center;
-    gap:14px;
-    margin-top:12px;
-    min-height:200px;
-    justify-content:center;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    min-height: 200px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
-  .character{
-    width:160px; height:160px; object-fit:contain; opacity:0; transition:opacity .25s ease, transform .25s ease;
+  .character {
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
   }
-  .visible { opacity:1; }
 
-  .hp-bar{ width:160px; height:12px; background:#333; border-radius:8px; overflow:hidden; border:1px solid rgba(0,0,0,0.5); margin-top:8px }
-  .hp-fill{ height:100%; width:100%; background:linear-gradient(90deg,#ff4b4b,#ff8c6b); transition:width .35s ease }
+  .visible {
+    opacity: 1;
+  }
 
-  .scene-column{ display:flex; flex-direction:column; align-items:center }
+  .hp-bar {
+    width: 160px;
+    height: 12px;
+    background: #333;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    margin-top: 8px;
+  }
+
+  .hp-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #ff4b4b, #ff8c6b);
+    transition: width 0.35s ease;
+  }
+
+  .scene-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
   /* buttons */
-  .controls{ display:flex; justify-content:center; gap:8px; margin-top:14px; flex-wrap:wrap }
-  .btn{
-    background:#111;
-    color:#fff;
-    border:1px solid rgba(255,255,255,0.06);
-    padding:10px 12px; border-radius:10px; cursor:pointer;
-    transition: transform .08s ease, background .12s;
-    min-width:140px; text-align:center;
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
   }
-  .btn:hover{ transform:translateY(-3px); background:#222 }
 
-  /* combat-specific UI */
-  #enemy-container.hidden{ display:none }
-  .flash { animation: flash 0.18s linear }
-  @keyframes flash{ 0%{filter:brightness(1.9)} 100%{filter:brightness(1)} }
-
-  /* attack animations */
-  @keyframes playerAttack {
-    0%{ transform:none } 40%{ transform: translateX(42px) rotate(3deg) } 70%{ transform: translateX(-18px) rotate(-4deg) } 100%{ transform:none }
+  .btn {
+    background: #111;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.12s;
+    min-width: 120px;
+    text-align: center;
+    font-size: 15px;
   }
-  @keyframes enemyAttack {
-    0%{ transform:none } 40%{ transform: translateX(-42px) rotate(-3deg) } 70%{ transform: translateX(18px) rotate(4deg) } 100%{ transform:none }
-  }
-  .player-attack { animation: playerAttack 420ms ease }
-  .enemy-attack  { animation: enemyAttack 420ms ease }
 
-  /* responsive */
-  @media (max-width:920px){
-    #main{ grid-template-columns: 1fr; }
-    #left{ order:2 }
-    #right{ order:1 }
+  .btn:hover {
+    transform: translateY(-3px);
+    background: #222;
+  }
+
+  /* responsive design */
+  @media (max-width: 920px) {
+    #main {
+      grid-template-columns: 1fr;
+    }
+    #left {
+      order: 2;
+    }
+    #right {
+      order: 1;
+    }
+    .character {
+      width: 120px;
+      height: 120px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    body {
+      padding: 12px;
+      background-position: center top;
+    }
+
+    #game {
+      padding: 14px;
+      border-radius: 10px;
+    }
+
+    header {
+      flex-direction: column;
+      text-align: center;
+      gap: 4px;
+    }
+
+    h1 {
+      font-size: 18px;
+    }
+
+    .sub {
+      font-size: 12px;
+    }
+
+    #scene {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .hp-bar {
+      width: 120px;
+    }
+
+    .btn {
+      min-width: 100%;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    #story {
+      font-size: 14px;
+    }
+
+    .stat-row {
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 400px) {
+    h1 {
+      font-size: 16px;
+    }
+
+    .btn {
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    #story {
+      font-size: 13px;
+    }
   }
 </style>
 </head>
@@ -127,7 +284,6 @@
         <h1>⚔️ Legends of Eldoria</h1>
         <div class="sub">Defeat the Dragon of Eldoria — explore, fight, buy & level up!</div>
       </div>
-      <div class="sub">Progress style: FreeCodeCamp flow • Visual RPG</div>
     </header>
 
     <div id="main">
