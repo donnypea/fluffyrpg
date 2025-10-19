@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Legends of Eldoria — Deluxe</title>
+<style>
+  :root{
+    --panel-bg: rgba(6,6,6,0.6);
+    --accent: #f6c84c;
+    --muted: #bfbfbf;
+  }
+  body{
+    margin:0;
+    font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: url('images/town-bg.jpg') no-repeat center center/cover;
+    color: #fff;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+  }
+
+  #game{
+    width: 860px;
+    max-width: calc(100% - 48px);
+    background: var(--panel-bg);
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  h1{ margin:0; font-size:22px; color:var(--accent); text-shadow:0 2px 8px rgba(0,0,0,0.7) }
+  .sub { color:var(--muted); font-size:13px }
+
+  #main {
+    display:grid;
+    grid-template-columns: 300px 1fr;
+    gap:18px;
+    margin-top:14px;
+  }
+
+  /* left column: stats + inventory */
+  #left {
+    background: rgba(0,0,0,0.4);
+    padding:12px;
+    border-radius:10px;
+  }
+
+  .stat-row{ display:flex; justify-content:space-between; padding:6px 8px; align-items:center; }
+  .stat-row strong{ color:var(--accent) }
+  #inventory{ margin-top:10px; font-size:14px }
+  #items-list{ list-style:none; padding:0; margin:6px 0 0 0; max-height:160px; overflow:auto }
+  #items-list li{ padding:6px 8px; background: rgba(255,255,255,0.03); margin-bottom:6px; border-radius:6px; font-size:13px }
+
+  /* right column: story / scene */
+  #right {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));
+    padding:12px;
+    border-radius:10px;
+  }
+
+  #area { font-weight:700; font-size:16px; color:var(--accent); margin-bottom:8px }
+  #story { min-height:72px; font-size:15px; color:#eee; padding:8px; border-radius:8px; background: rgba(0,0,0,0.25); }
+
+  #scene {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:12px;
+    min-height:200px;
+    justify-content:center;
+  }
+
+  .character{
+    width:160px; height:160px; object-fit:contain; opacity:0; transition:opacity .25s ease, transform .25s ease;
+  }
+  .visible { opacity:1; }
+
+  .hp-bar{ width:160px; height:12px; background:#333; border-radius:8px; overflow:hidden; border:1px solid rgba(0,0,0,0.5); margin-top:8px }
+  .hp-fill{ height:100%; width:100%; background:linear-gradient(90deg,#ff4b4b,#ff8c6b); transition:width .35s ease }
+
+  .scene-column{ display:flex; flex-direction:column; align-items:center }
+
+  /* buttons */
+  .controls{ display:flex; justify-content:center; gap:8px; margin-top:14px; flex-wrap:wrap }
+  .btn{
+    background:#111;
+    color:#fff;
+    border:1px solid rgba(255,255,255,0.06);
+    padding:10px 12px; border-radius:10px; cursor:pointer;
+    transition: transform .08s ease, background .12s;
+    min-width:140px; text-align:center;
+  }
+  .btn:hover{ transform:translateY(-3px); background:#222 }
+
+  /* combat-specific UI */
+  #enemy-container.hidden{ display:none }
+  .flash { animation: flash 0.18s linear }
+  @keyframes flash{ 0%{filter:brightness(1.9)} 100%{filter:brightness(1)} }
+
+  /* attack animations */
+  @keyframes playerAttack {
+    0%{ transform:none } 40%{ transform: translateX(42px) rotate(3deg) } 70%{ transform: translateX(-18px) rotate(-4deg) } 100%{ transform:none }
+  }
+  @keyframes enemyAttack {
+    0%{ transform:none } 40%{ transform: translateX(-42px) rotate(-3deg) } 70%{ transform: translateX(18px) rotate(4deg) } 100%{ transform:none }
+  }
+  .player-attack { animation: playerAttack 420ms ease }
+  .enemy-attack  { animation: enemyAttack 420ms ease }
+
+  /* responsive */
+  @media (max-width:920px){
+    #main{ grid-template-columns: 1fr; }
+    #left{ order:2 }
+    #right{ order:1 }
+  }
+</style>
+</head>
+<body>
+  <div id="game">
+    <header>
+      <div>
+        <h1>⚔️ Legends of Eldoria</h1>
+        <div class="sub">Defeat the Dragon of Eldoria — explore, fight, buy & level up!</div>
+      </div>
+      <div class="sub">Progress style: FreeCodeCamp flow • Visual RPG</div>
+    </header>
+
+    <div id="main">
+      <!-- LEFT (stats + inventory) -->
+      <div id="left">
+        <div class="stat-row"><span><strong>HP</strong></span><span id="hp-text">100 / 100</span></div>
+        <div class="stat-row"><span><strong>Attack</strong></span><span id="attack-text">10</span></div>
+        <div class="stat-row"><span><strong>Defense</strong></span><span id="def-text">0</span></div>
+        <div class="stat-row"><span><strong>Gold</strong></span><span id="gold-text">50</span></div>
+        <div class="stat-row"><span><strong>Level</strong></span><span id="level-text">1</span></div>
+        <div class="stat-row"><span><strong>XP</strong></span><span id="xp-text">0</span></div>
+
+        <div id="inventory">
+          <h4 style="margin:6px 0 8px 0;color:var(--accent)">🎒 Inventory</h4>
+          <ul id="items-list"></ul>
+        </div>
+      </div>
+
+      <!-- RIGHT (story + scene + dynamic buttons) -->
+      <div id="right">
+        <div id="area">🏠 Town Square</div>
+        <div id="story">Welcome to Eldoria, hero — your journey will take you from the Town Square into the Forest, Cave and finally the Dragon's Lair.</div>
+
+        <div id="scene">
+          <!-- player -->
+          <div class="scene-column">
+            <img id="player-img" class="character visible" src="images/hero.png" alt="hero">
+            <div class="hp-bar"><div id="player-hp-fill" class="hp-fill" style="background:linear-gradient(90deg,#6df57b,#32cd32)"></div></div>
+            <div class="sub" style="margin-top:6px">Player HP</div>
+          </div>
+
+          <!-- enemy (hidden unless in combat) -->
+          <div id="enemy-container" class="scene-column hidden">
+            <img id="monster-img" class="character" src="" alt="monster">
+            <div class="hp-bar"><div id="monster-hp-fill" class="hp-fill"></div></div>
+            <div id="monster-hp-label" class="sub" style="margin-top:6px">Enemy HP</div>
+          </div>
+        </div>
+
+        <div class="controls" id="controls">
+          <!-- Three dynamic buttons (FreeCodeCamp flow) -->
+          <button id="btn1" class="btn" onclick="">Button1</button>
+          <button id="btn2" class="btn" onclick="">Button2</button>
+          <button id="btn3" class="btn" onclick="">Button3</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   Game state & data
+   ========================= */
+const player = {
+  level:1, xp:0,
+  maxHp:100, hp:100,
+  attack:10, defense:0,
+  gold:50,
+  inventory: []
+};
+
+// monsters persist in this object (HP remains if you run)
+const monsters = {
+  forest: { id:'forest', name:'Goblin', hp:40, maxHp:40, attack:6, gold:20, xp:10, image:'images/goblin.png', defeated:false, next:'cave' },
+  cave:   { id:'cave', name:'Cave Ogre', hp:70, maxHp:70, attack:10, gold:40, xp:20, image:'images/ogre.png', defeated:false, next:'mountain' },
+  mountain:{id:'mountain', name:'Dragon of Eldoria', hp:150, maxHp:150, attack:20, gold:200, xp:100, image:'images/dragon.png', defeated:false, next:null }
+};
+
+let currentLocation = 'townSquare'; // location id from locations array
+let inCombat = false;
+let currentEnemy = null;
+
+/* =========================
+   DOM refs
+   ========================= */
+const areaEl = document.getElementById('area');
+const storyEl = document.getElementById('story');
+const playerImg = document.getElementById('player-img');
+const monsterImg = document.getElementById('monster-img');
+const enemyContainer = document.getElementById('enemy-container');
+
+const playerHpFill = document.getElementById('player-hp-fill');
+const monsterHpFill = document.getElementById('monster-hp-fill');
+const monsterLabel = document.getElementById('monster-hp-label');
+
+const btn1 = document.getElementById('btn1');
+const btn2 = document.getElementById('btn2');
+const btn3 = document.getElementById('btn3');
+
+const hpText = document.getElementById('hp-text');
+const attackText = document.getElementById('attack-text');
+const defText = document.getElementById('def-text');
+const goldText = document.getElementById('gold-text');
+const levelText = document.getElementById('level-text');
+const xpText = document.getElementById('xp-text');
+const itemsList = document.getElementById('items-list');
+
+/* =========================
+   Locations (FreeCodeCamp flow)
+   Each location has: text, buttons text, button functions
+   ========================= */
+const locations = {
+  townSquare: {
+    name:'Town Square',
+    background:'images/town-bg.jpg',
+    text: "You stand in the Town Square. A traveler warns of a terrible Dragon beyond the mountain. What will you do?",
+    buttons:[
+      { text:'Go to Store', action: () => goLocation('store') },
+      { text:'Go to Forest', action: () => goLocation('forest') },
+      { text:'Check Stats', action: showStats }
+    ]
+  },
+
+  store: {
+    name:'Shop',
+    background:'images/shop-bg.jpg',
+    text: "The shop smells of herbs and iron. Buy wisely.",
+    buttons:[
+      { text:'Buy Potion (20G)', action: () => buyItem('potion',20) },
+      { text:'Buy Sword (+5 ATK, 50G)', action: () => buyItem('sword',50) },
+      { text:'Leave Store', action: () => goLocation('townSquare') }
+    ]
+  },
+
+  forest: {
+    name:'Forest',
+    background:'images/forest-bg.jpg',
+    text: "You step into the Forest. The trees whisper. Danger approaches...",
+    buttons:[
+      { text:'Search Area (Encounter)', action: () => startCombat('forest') },
+      { text:'Return to Town', action: () => goLocation('townSquare') },
+      { text:'Check Inventory', action: showInventory }
+    ]
+  },
+
+  cave: {
+    name:'Cave',
+    background:'images/cave-bg.jpg',
+    text: "A cold cave yawns before you. The earth trembles with something large.",
+    buttons:[
+      { text:'Venture Deeper (Encounter)', action: () => startCombat('cave') },
+      { text:'Return to Town', action: () => goLocation('townSquare') },
+      { text:'Check Stats', action: showStats }
+    ]
+  },
+
+  mountain: {
+    name:'Volcanic Mountain',
+    background:'images/volcano-bg.jpg',
+    text: "Lava cracks the ground. The Dragon's roar echoes. You must face the Dragon.",
+    buttons:[
+      { text:'Face the Dragon', action: () => startCombat('mountain') },
+      { text:'Return to Town', action: () => goLocation('townSquare') },
+      { text:'Check Inventory', action: showInventory }
+    ]
+  },
+
+  victory: {
+    name:'Victory',
+    background:'images/town-bg.jpg',
+    text: "You are a legend! The Dragon lies slain and Eldoria celebrates your name.",
+    buttons:[
+      { text:'Play Again', action: resetGame },
+      { text:'Quit', action: () => { storyEl.textContent = 'Thanks for playing! Refresh to play again.' } },
+      { text:'Check Stats', action: showStats }
+    ]
+  }
+};
+
+/* =========================
+   Utility & UI helpers
+   ========================= */
+function updateUI(){
+  // stats
+  hpText.textContent = `${player.hp} / ${player.maxHp}`;
+  attackText.textContent = player.attack;
+  defText.textContent = player.defense;
+  goldText.textContent = player.gold;
+  levelText.textContent = player.level;
+  xpText.textContent = player.xp;
+
+  // hp bars
+  playerHpFill.style.width = `${Math.max(0, (player.hp/player.maxHp)*100)}%`;
+  if(inCombat && currentEnemy){
+    monsterHpFill.style.width = `${Math.max(0, (currentEnemy.hp/currentEnemy.maxHp)*100)}%`;
+    monsterLabel.textContent = `${currentEnemy.name} HP`;
+  }
+
+  // inventory list
+  itemsList.innerHTML = '';
+  if(player.inventory.length===0){
+    const li = document.createElement('li'); li.textContent = '(empty)'; li.style.opacity=0.7;
+    itemsList.appendChild(li);
+  } else {
+    player.inventory.forEach((it, idx) => {
+      const li = document.createElement('li');
+      li.textContent = it + (it==='potion' ? ' (heal +30HP)' : it==='sword' ? ' (+5 ATK)' : it==='armor' ? ' (+3 DEF)' : '');
+      itemsList.appendChild(li);
+    });
+  }
+}
+
+function setButtons(btns){
+  // Expects array of up to 3 {text, action}
+  const b = [btn1, btn2, btn3];
+  for(let i=0;i<3;i++){
+    if(btns[i]){
+      b[i].style.display='inline-block';
+      b[i].textContent = btns[i].text;
+      b[i].onclick = () => btns[i].action();
+    } else {
+      b[i].style.display='none';
+    }
+  }
+}
+
+/* =========================
+   Navigation (FreeCodeCamp flow)
+   ========================= */
+function goLocation(locKey){
+  // end any combat UI but do NOT reset enemy hp (persistence)
+  inCombat = false;
+  currentEnemy = null;
+  enemyContainer.classList.add('hidden');
+
+  currentLocation = locKey;
+  const loc = locations[locKey];
+  if(!loc) return;
+  // update background if image is present
+  if(loc.background) document.body.style.backgroundImage = `url('${loc.background}')`;
+  areaEl.textContent = `${loc.name}`;
+  storyEl.textContent = loc.text;
+  setButtons(loc.buttons);
+  updateUI();
+}
+
+/* =========================
+   Shop & inventory
+   ========================= */
+function buyItem(item, cost){
+  if(player.gold < cost){
+    storyEl.textContent = "You don't have enough gold.";
+    return;
+  }
+  player.gold -= cost;
+  player.inventory.push(item);
+  storyEl.textContent = `You purchased ${item}.`;
+  // immediate equip effects for demo items
+  if(item === 'sword') player.attack += 5;
+  if(item === 'armor') player.defense += 3;
+  updateUI();
+}
+
+function showInventory(){
+  storyEl.textContent = "You check your pack. Use potions in combat.";
+  setButtons([
+    {text:'Back', action: ()=> goLocation(currentLocation)},
+    null, null
+  ]);
+}
+
+function showStats(){
+  storyEl.textContent = `LV ${player.level} — HP ${player.hp}/${player.maxHp} — ATK ${player.attack} — DEF ${player.defense} — Gold ${player.gold} — XP ${player.xp}`;
+  setButtons([{text:'Back', action: ()=> goLocation(currentLocation)}, null, null]);
+}
+
+/* =========================
+   Combat flow (startCombat / attack / enemyAttack / run)
+   ========================= */
+function startCombat(areaKey){
+  // if monster already defeated, skip and move on
+  const m = monsters[areaKey];
+  if(m.defeated){
+    storyEl.textContent = `The ${m.name} has already been defeated here.`;
+    // unlock next automatically (like freeCodeCamp)
+    setTimeout(()=> {
+      if(m.next) goLocation(m.next);
+      else goLocation('victory');
+    }, 700);
+    return;
+  }
+
+  inCombat = true;
+  currentEnemy = m;
+  currentLocation = areaKey;
+
+  // show battle scene
+  if(locations[areaKey].background) document.body.style.backgroundImage = `url('${locations[areaKey].background}')`;
+  enemyContainer.classList.remove('hidden');
+  monsterImg.src = m.image;
+  monsterImg.classList.add('visible');
+  monsterHpFill.style.width = `${(m.hp/m.maxHp)*100}%`;
+  monsterLabel.textContent = `${m.name} HP`;
+
+  storyEl.textContent = `A wild ${m.name} appears! Prepare for battle.`;
+  setButtons([
+    {text:'⚔️ Attack', action: attackAction},
+    {text:'🧴 Use Potion', action: usePotion},
+    {text:'🏃 Run Away', action: runAway}
+  ]);
+
+  updateUI();
+}
+
+function attackAction(){
+  if(!inCombat || !currentEnemy) return;
+  // Player attack animation
+  playerImg.classList.add('player-attack');
+  setTimeout(()=> playerImg.classList.remove('player-attack'), 420);
+
+  const dmg = Math.floor(Math.random() * player.attack) + 5;
+  currentEnemy.hp -= dmg;
+  monsterImg.classList.add('flash');
+  setTimeout(()=> monsterImg.classList.remove('flash'), 160);
+
+  storyEl.textContent = `You strike the ${currentEnemy.name} for ${dmg} damage!`;
+
+  // update enemy bar
+  monsterHpFill.style.width = `${Math.max(0, (currentEnemy.hp/currentEnemy.maxHp)*100)}%`;
+
+  if(currentEnemy.hp <= 0){
+    // win
+    currentEnemy.defeated = true;
+    currentEnemy.hp = 0;
+    setTimeout(()=> victorySequence(currentEnemy), 520);
+  } else {
+    // enemy turn
+    setTimeout(()=> enemyAttack(), 600);
+  }
+  updateUI();
+}
+
+function enemyAttack(){
+  if(!inCombat || !currentEnemy) return;
+  monsterImg.classList.add('enemy-attack');
+  setTimeout(()=> monsterImg.classList.remove('enemy-attack'), 420);
+
+  const raw = Math.floor(Math.random()*currentEnemy.attack) + 2;
+  const dmg = Math.max(1, raw - player.defense);
+  player.hp -= dmg;
+  if(player.hp < 0) player.hp = 0;
+
+  storyEl.textContent += ` The ${currentEnemy.name} hits you for ${dmg} damage!`;
+  updateUI();
+
+  if(player.hp <= 0){
+    setTimeout(()=> playerDefeated(), 700);
+  }
+}
+
+function usePotion(){
+  // using potion only available if in inventory
+  const idx = player.inventory.indexOf('potion');
+  if(idx === -1){
+    storyEl.textContent = "You have no potions.";
+    return;
+  }
+  player.inventory.splice(idx,1);
+  player.hp = Math.min(player.maxHp, player.hp + 30);
+  storyEl.textContent = "You used a potion and healed 30 HP!";
+  updateUI();
+  // enemy gets a turn after you use potion
+  setTimeout(()=> enemyAttack(), 700);
+}
+
+function runAway(){
+  // run to Town Square, but monster HP persists
+  storyEl.textContent = "You flee back to the Town. The enemy waits...";
+  inCombat = false;
+  currentEnemy = null;
+  enemyContainer.classList.add('hidden');
+  // go to Town but keep monsters' states unchanged
+  setTimeout(()=> goLocation('townSquare'), 500);
+}
+
+/* =========================
+   Victory & defeat handling
+   ========================= */
+function victorySequence(mon){
+  inCombat = false;
+  // reward
+  player.gold += mon.gold;
+  player.xp += mon.xp;
+  storyEl.textContent = `You defeated the ${mon.name}! You gained ${mon.gold} gold and ${mon.xp} XP.`;
+
+  // level up check
+  checkLevelUp();
+
+  // if dragon, show final victory location
+  if(mon.id === 'mountain'){
+    // end game victory
+    setTimeout(()=> goLocation('victory'), 900);
+    return;
+  }
+
+  // else go to next area automatically
+  setTimeout(()=> {
+    enemyContainer.classList.add('hidden');
+    if(mon.next) goLocation(mon.next);
+    else goLocation('townSquare');
+  }, 900);
+
+  updateUI();
+}
+
+function playerDefeated(){
+  inCombat = false;
+  // penalty: lose some gold
+  const loss = Math.min(player.gold, 20);
+  player.gold -= loss;
+  player.hp = player.maxHp; // respawn with full HP for simplicity
+  storyEl.textContent = `You were defeated and woke up in Town. You lost ${loss} gold.`;
+  enemyContainer.classList.add('hidden');
+  currentEnemy = null;
+  updateUI();
+  setTimeout(()=> goLocation('townSquare'), 900);
+}
+
+/* =========================
+   Leveling & reset
+   ========================= */
+function checkLevelUp(){
+  const needed = player.level * 30;
+  if(player.xp >= needed){
+    player.level++;
+    player.attack += 4;
+    player.maxHp += 20;
+    player.hp = player.maxHp;
+    storyEl.textContent += ` You leveled up to ${player.level}!`;
+  }
+}
+
+function resetGame(){
+  // reset player and monsters
+  player.level = 1; player.xp = 0; player.maxHp = 100; player.hp = 100; player.attack = 10; player.defense = 0; player.gold = 50; player.inventory = [];
+  for(const k in monsters){
+    monsters[k].hp = monsters[k].maxHp;
+    monsters[k].defeated = false;
+  }
+  goLocation('townSquare');
+  updateUI();
+}
+
+/* =========================
+   Initialize UI
+   ========================= */
+function init(){
+  // set initial UI buttons based on FreeCodeCamp flow
+  goLocation('townSquare');
+  updateUI();
+}
+
+init();
+
+</script>
+</body>
+</html>
